@@ -27,6 +27,8 @@ KRAKEN_ENDPOINT = "https://api.kraken.com/0/public/AssetPairs"
 
 API_CALL_TIMEOUT = 5
 
+from hummingbot.market.okex.constants import OKEX_SYMBOLS_URL
+
 
 class TradingPairFetcher:
     _sf_shared_instance: "TradingPairFetcher" = None
@@ -60,7 +62,7 @@ class TradingPairFetcher:
 
     async def fetch_binance_trading_pairs(self) -> List[str]:
         try:
-            from hummingbot.market.binance.binance_market import BinanceMarket
+            from hummingbot.market.binance.binance_utils import convert_from_exchange_trading_pair
             client: aiohttp.ClientSession = self.http_client()
             async with client.get(BINANCE_ENDPOINT, timeout=API_CALL_TIMEOUT) as response:
                 if response.status == 200:
@@ -69,7 +71,7 @@ class TradingPairFetcher:
                     trading_pair_list: List[str] = []
                     for raw_trading_pair in raw_trading_pairs:
                         converted_trading_pair: Optional[str] = \
-                            BinanceMarket.convert_from_exchange_trading_pair(raw_trading_pair)
+                            convert_from_exchange_trading_pair(raw_trading_pair)
                         if converted_trading_pair is not None:
                             trading_pair_list.append(converted_trading_pair)
                         else:
@@ -84,7 +86,6 @@ class TradingPairFetcher:
 
     async def fetch_radar_relay_trading_pairs(self) -> List[str]:
         try:
-            from hummingbot.market.radar_relay.radar_relay_market import RadarRelayMarket
             trading_pairs = set()
             page_count = 1
             client: aiohttp.ClientSession = self.http_client()
@@ -101,12 +102,7 @@ class TradingPairFetcher:
                         page_count += 1
                         trading_pair_list: List[str] = []
                         for raw_trading_pair in trading_pairs:
-                            converted_trading_pair: Optional[str] = \
-                                RadarRelayMarket.convert_from_exchange_trading_pair(raw_trading_pair)
-                            if converted_trading_pair is not None:
-                                trading_pair_list.append(converted_trading_pair)
-                            else:
-                                self.logger().debug(f"Could not parse the trading pair {raw_trading_pair}, skipping it...")
+                            trading_pair_list.append(raw_trading_pair)
                         return trading_pair_list
                     else:
                         break
@@ -118,8 +114,6 @@ class TradingPairFetcher:
 
     async def fetch_bamboo_relay_trading_pairs(self) -> List[str]:
         try:
-            from hummingbot.market.bamboo_relay.bamboo_relay_market import BambooRelayMarket
-
             trading_pairs = set()
             page_count = 1
             client: aiohttp.ClientSession = self.http_client()
@@ -137,12 +131,7 @@ class TradingPairFetcher:
                         page_count += 1
                         trading_pair_list: List[str] = []
                         for raw_trading_pair in trading_pairs:
-                            converted_trading_pair: Optional[str] = \
-                                BambooRelayMarket.convert_from_exchange_trading_pair(raw_trading_pair)
-                            if converted_trading_pair is not None:
-                                trading_pair_list.append(converted_trading_pair)
-                            else:
-                                self.logger().debug(f"Could not parse the trading pair {raw_trading_pair}, skipping it...")
+                            trading_pair_list.append(raw_trading_pair)
                         return trading_pair_list
                     else:
                         break
@@ -155,8 +144,6 @@ class TradingPairFetcher:
 
     async def fetch_coinbase_pro_trading_pairs(self) -> List[str]:
         try:
-            from hummingbot.market.coinbase_pro.coinbase_pro_market import CoinbaseProMarket
-
             client: aiohttp.ClientSession = self.http_client()
             async with client.get(COINBASE_PRO_ENDPOINT, timeout=API_CALL_TIMEOUT) as response:
                 if response.status == 200:
@@ -164,12 +151,7 @@ class TradingPairFetcher:
                     raw_trading_pairs: List[str] = list(map(lambda details: details.get('id'), markets))
                     trading_pair_list: List[str] = []
                     for raw_trading_pair in raw_trading_pairs:
-                        converted_trading_pair: Optional[str] = \
-                            CoinbaseProMarket.convert_from_exchange_trading_pair(raw_trading_pair)
-                        if converted_trading_pair is not None:
-                            trading_pair_list.append(converted_trading_pair)
-                        else:
-                            self.logger().debug(f"Could not parse the trading pair {raw_trading_pair}, skipping it...")
+                        trading_pair_list.append(raw_trading_pair)
                     return trading_pair_list
 
         except Exception:
@@ -180,7 +162,7 @@ class TradingPairFetcher:
 
     async def fetch_eterbase_trading_pairs(self) -> List[str]:
         try:
-            from hummingbot.market.eterbase.eterbase_market import EterbaseMarket
+            from hummingbot.market.eterbase.eterbase_utils import convert_from_exchange_trading_pair
 
             client: aiohttp.ClientSession() = self.http_client()
             async with client.get(ETERBASE_ENDPOINT, timeout=API_CALL_TIMEOUT) as response:
@@ -190,7 +172,7 @@ class TradingPairFetcher:
                     trading_pair_list: List[str] = []
                     for raw_trading_pair in raw_trading_pairs:
                         converted_trading_pair: Optional[str] = \
-                            EterbaseMarket.convert_from_exchange_trading_pair(raw_trading_pair)
+                            convert_from_exchange_trading_pair(raw_trading_pair)
                         if converted_trading_pair is not None:
                             trading_pair_list.append(converted_trading_pair)
                         else:
@@ -203,7 +185,7 @@ class TradingPairFetcher:
 
     async def fetch_huobi_trading_pairs(self) -> List[str]:
         try:
-            from hummingbot.market.huobi.huobi_market import HuobiMarket
+            from hummingbot.market.huobi.huobi_utils import convert_from_exchange_trading_pair
 
             client: aiohttp.ClientSession = self.http_client()
             async with client.get(HUOBI_ENDPOINT, timeout=API_CALL_TIMEOUT) as response:
@@ -216,7 +198,7 @@ class TradingPairFetcher:
                     trading_pair_list: List[str] = []
                     for raw_trading_pair in valid_trading_pairs:
                         converted_trading_pair: Optional[str] = \
-                            HuobiMarket.convert_from_exchange_trading_pair(raw_trading_pair)
+                            convert_from_exchange_trading_pair(raw_trading_pair)
                         if converted_trading_pair is not None:
                             trading_pair_list.append(converted_trading_pair)
                         else:
@@ -285,7 +267,7 @@ class TradingPairFetcher:
             async with aiohttp.ClientSession() as client:
                 async with client.get(KRAKEN_ENDPOINT, timeout=API_CALL_TIMEOUT) as response:
                     if response.status == 200:
-                        from hummingbot.market.kraken.kraken_market import KrakenMarket
+                        from hummingbot.market.kraken.kraken_utils import convert_from_exchange_trading_pair
                         data: Dict[str, Any] = await response.json()
                         raw_pairs = data.get("result", [])
                         converted_pairs: List[str] = []
@@ -293,7 +275,7 @@ class TradingPairFetcher:
                             if "." not in pair:
                                 try:
                                     wsname = details["wsname"]  # pair in format BASE/QUOTE
-                                    converted_pairs.append(KrakenMarket.convert_from_exchange_trading_pair(wsname))
+                                    converted_pairs.append(convert_from_exchange_trading_pair(wsname))
                                 except IOError:
                                     pass
                         return [item for item in converted_pairs]
@@ -301,6 +283,25 @@ class TradingPairFetcher:
             pass
             # Do nothing if the request fails -- there will be no autocomplete for kraken trading pairs
         return []
+
+    @staticmethod
+    async def fetch_okex_trading_pairs() -> List[str]:
+        # Returns a List of str, representing each active trading pair on the exchange.
+        async with aiohttp.ClientSession() as client:
+            async with client.get(OKEX_SYMBOLS_URL) as products_response:
+                
+                products_response: aiohttp.ClientResponse = products_response
+                if products_response.status != 200:
+                    raise IOError(f"Error fetching active OKEx markets. HTTP status is {products_response.status}.")
+
+                data = await products_response.json()
+
+                trading_pairs = []
+                for item in data:
+                    # I couldn't find where to check if it's online in OKEx API doc
+                    trading_pairs.append(item['instrument_id'])
+
+        return trading_pairs
 
     async def fetch_dolomite_trading_pairs(self) -> List[str]:
         try:
@@ -338,7 +339,9 @@ class TradingPairFetcher:
                  self.fetch_kucoin_trading_pairs(),
                  self.fetch_kraken_trading_pairs(),
                  self.fetch_radar_relay_trading_pairs(),
-                 self.fetch_eterbase_trading_pairs()]
+                 self.fetch_eterbase_trading_pairs(),
+                 self.fetch_okex_trading_pairs()
+                 ]
 
         # Radar Relay has not yet been migrated to a new version
         # Endpoint needs to be updated after migration
@@ -357,5 +360,6 @@ class TradingPairFetcher:
             "kraken": results[8],
             "radar_relay": results[9],
             "eterbase": results[10],
+            "okex": results[11]
         }
         self.ready = True

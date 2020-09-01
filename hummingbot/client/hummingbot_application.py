@@ -25,6 +25,7 @@ from hummingbot.market.radar_relay.radar_relay_market import RadarRelayMarket
 from hummingbot.market.bamboo_relay.bamboo_relay_market import BambooRelayMarket
 from hummingbot.market.dolomite.dolomite_market import DolomiteMarket
 from hummingbot.market.kraken.kraken_market import KrakenMarket
+from hummingbot.market.okex.okex_market import OKExMarket
 from hummingbot.model.sql_connection_manager import SQLConnectionManager
 
 from hummingbot.wallet.ethereum.ethereum_chain import EthereumChain
@@ -49,20 +50,6 @@ from hummingbot.client.config.security import Security
 
 
 s_logger = None
-
-MARKET_CLASSES = {
-    "bamboo_relay": BambooRelayMarket,
-    "binance": BinanceMarket,
-    "coinbase_pro": CoinbaseProMarket,
-    "huobi": HuobiMarket,
-    "liquid": LiquidMarket,
-    "radar_relay": RadarRelayMarket,
-    "dolomite": DolomiteMarket,
-    "bittrex": BittrexMarket,
-    "kucoin": KucoinMarket,
-    "eterbase": EterbaseMarket,
-    "kraken": KrakenMarket
-}
 
 
 class HummingbotApplication(*commands):
@@ -199,14 +186,8 @@ class HummingbotApplication(*commands):
 
     @staticmethod
     def _initialize_market_assets(market_name: str, trading_pairs: List[str]) -> List[Tuple[str, str]]:
-        market_class: MarketBase = MARKET_CLASSES.get(market_name, MarketBase)
-        market_trading_pairs: List[Tuple[str, str]] = [market_class.split_trading_pair(trading_pair) for trading_pair in trading_pairs]
+        market_trading_pairs: List[Tuple[str, str]] = [(trading_pair.split('-')) for trading_pair in trading_pairs]
         return market_trading_pairs
-
-    @staticmethod
-    def _convert_to_exchange_trading_pair(market_name: str, hb_trading_pair: List[str]) -> List[str]:
-        market_class: MarketBase = MARKET_CLASSES.get(market_name, MarketBase)
-        return [market_class.convert_to_exchange_trading_pair(trading_pair) for trading_pair in hb_trading_pair]
 
     def _initialize_wallet(self, token_trading_pairs: List[str]):
         if not using_wallet():
@@ -233,10 +214,8 @@ class HummingbotApplication(*commands):
         for market_name, trading_pairs in market_names:
             if market_name not in market_trading_pairs_map:
                 market_trading_pairs_map[market_name] = []
-            market_class: MarketBase = MARKET_CLASSES.get(market_name, MarketBase)
-            for trading_pair in trading_pairs:
-                exchange_trading_pair: str = market_class.convert_to_exchange_trading_pair(trading_pair)
-                market_trading_pairs_map[market_name].append(exchange_trading_pair)
+            for hb_trading_pair in trading_pairs:
+                market_trading_pairs_map[market_name].append(hb_trading_pair)
 
         for market_name, trading_pairs in market_trading_pairs_map.items():
             if global_config_map.get("paper_trade_enabled").value:
@@ -355,6 +334,17 @@ class HummingbotApplication(*commands):
                                       order_book_tracker_data_source_type=OrderBookTrackerDataSourceType.EXCHANGE_API,
                                       trading_pairs=trading_pairs,
                                       trading_required=self._trading_required)
+            elif market_name == "okex":
+                okex_api_key = global_config_map.get("kraken_api_key").value
+                okex_secret_key = global_config_map.get("kraken_secret_key").value
+                okex_phasphras = global_config_map.get("kraken_secret_key").value
+                market = OKExMarket(okex_api_key=okex_api_key,
+                                      okex_secret_key=okex_secret_key,
+                                      okex_phasphras = okex_phasphras,
+                                      order_book_tracker_data_source_type=OrderBookTrackerDataSourceType.EXCHANGE_API,
+                                      trading_pairs=trading_pairs,
+                                      trading_required=self._trading_required)
+
             else:
                 raise ValueError(f"Market name {market_name} is invalid.")
 

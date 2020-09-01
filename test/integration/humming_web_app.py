@@ -93,8 +93,9 @@ class HummingWebApp:
 
     # reroute a url if it is one of the hosts we handle.
     @staticmethod
-    def reroute_local(url):
+    def reroute_local(url, encoded=None):
         a_url = URL(url)
+
         if a_url.host in HummingWebApp._hosts_to_mock and not any(x in a_url.path for x in
                                                                   HummingWebApp._hosts_to_mock[a_url.host]):
             host_path = f"/{a_url.host}{a_url.path}"
